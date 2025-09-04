@@ -22,12 +22,6 @@ jobs:
         with:
           dotnet-version: '9.0.x'
 
-      - name: Setup MSBuild (Visual Studio Build Tools)
-        uses: microsoft/setup-msbuild@v2
-
-      - name: Restore (with RuntimeIdentifier)
-        run: dotnet restore ${{ env.PROJECT_PATH }} /p:RuntimeIdentifier=win-x64
-
       - name: Compute version
         id: getver
         shell: pwsh
@@ -40,16 +34,15 @@ jobs:
             Write-Output "version=0.0.0-$short" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           }
 
-      - name: Build & Publish with MSBuild
+      - name: Restore + Publish
         shell: pwsh
         run: |
-          msbuild $env:PROJECT_PATH `
-            /t:Publish `
-            /p:Configuration=Release `
-            /p:Platform="Any CPU" `
-            /p:RuntimeIdentifier=win-x64 `
+          dotnet restore $env:PROJECT_PATH -r win-x64
+          dotnet publish $env:PROJECT_PATH `
+            -c Release `
+            -r win-x64 `
+            --self-contained true `
             /p:PublishSingleFile=true `
-            /p:SelfContained=true `
             /p:PublishTrimmed=false
 
       - name: Install Inno Setup
