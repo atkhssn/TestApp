@@ -1,3 +1,5 @@
+using AutoUpdaterDotNET;
+
 namespace TestApp
 {
     internal static class Program
@@ -8,8 +10,7 @@ namespace TestApp
         [STAThread]
         static void Main()
         {
-            // To customize application configuration such as set high DPI settings or default font,
-            // see https://aka.ms/applicationconfiguration.
+            AutoUpdater.Start("https://raw.githubusercontent.com/atkhssn/TestApp/main/updates.xml");
             ApplicationConfiguration.Initialize();
             Application.Run(new Form1());
         }

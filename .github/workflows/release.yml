@@ -11,6 +11,8 @@ permissions:
 jobs:
   build:
     runs-on: windows-latest
+    outputs:
+      version: ${{ steps.getver.outputs.version }}
     env:
       APP_NAME: TestApp
       PROJECT_PATH: src\TestApp\TestApp.csproj
@@ -84,3 +86,18 @@ jobs:
         with:
           files: artifacts/**/*.exe
           generate_release_notes: true
+
+      - name: Generate update metadata
+        run: |
+          echo "<?xml version='1.0' encoding='UTF-8'?>" > updates.xml
+          echo "<item>" >> updates.xml
+          echo "  <version>${{ needs.build.outputs.version }}</version>" >> updates.xml
+          echo "  <url>https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/TestApp-Setup-${{ needs.build.outputs.version }}.exe</url>" >> updates.xml
+          echo "  <changelog>https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}</changelog>" >> updates.xml
+          echo "</item>" >> updates.xml
+
+      - name: Upload updates.xml to repo
+        uses: EndBug/add-and-commit@v9
+        with:
+          add: 'updates.xml'
+          message: "Update metadata for ${{ needs.build.outputs.version }}"
