@@ -1,0 +1,84 @@
+name: Build & Package (.NET 9 + Inno Setup)
+
+on:
+  push:
+    branches: [ "main" ]
+    tags: [ "v*" ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      APP_NAME: Test App
+      PROJECT_PATH: src\TestApp\TestApp.csproj
+      PUBLISH_REL_PATH: src\TestApp\bin\Release\net9.0-windows\win-x64\publish
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Setup MSBuild (Visual Studio Build Tools)
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Restore (if using NuGet / package references)
+        run: dotnet restore ${{ env.PROJECT_PATH }}
+
+      - name: Compute version
+        id: getver
+        shell: pwsh
+        run: |
+          $ref = "${{ github.ref_name }}"
+          if ($ref -match '^v\d+\.\d+\.\d+$') {
+            Write-Output "version=$($ref.TrimStart('v'))" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          } else {
+            $short = "${{ github.sha }}".Substring(0,7)
+            Write-Output "version=0.0.0-$short" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          }
+
+      - name: Build & Publish with MSBuild (avoids GenerateResource x86 host issue)
+        shell: pwsh
+        run: |
+          # Publish via msbuild Publish target to create the single self-contained file
+          msbuild $env:PROJECT_PATH /t:Publish /p:Configuration=Release /p:Platform="Any CPU" /p:RuntimeIdentifier=win-x64 /p:PublishSingleFile=true /p:SelfContained=true /p:PublishTrimmed=false
+
+      - name: Install Inno Setup
+        run: choco install innosetup --yes --no-progress
+
+      - name: Build installer (Inno Setup)
+        shell: pwsh
+        run: |
+          $publish = Join-Path $PWD "${{ env.PUBLISH_REL_PATH }}"
+          if (-not (Test-Path $publish)) {
+            Write-Error "Publish folder not found: $publish"
+            exit 1
+          }
+          & iscc.exe "installer\Setup.iss" /DMyAppVersion="${{ steps.getver.outputs.version }}" /DSourceDir="$publish"
+
+      - name: Upload artifacts (installer + publish)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.APP_NAME }}-${{ steps.getver.outputs.version }}
+          path: |
+            dist\*.exe
+            ${{ env.PUBLISH_REL_PATH }}\**
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: windows-latest
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**/*.exe
+          generate_release_notes: true

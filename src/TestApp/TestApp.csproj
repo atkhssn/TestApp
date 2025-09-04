@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net9.0-windows</TargetFramework>
+		<Nullable>enable</Nullable>
+		<UseWindowsForms>true</UseWindowsForms>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
+	</PropertyGroup>
+
+	<ItemGroup Condition="Exists('..\\..\\lib\\DevExpress')">
+		<Reference Include="DevExpress.Data.Desktop.v25.1">
+			<HintPath>..\\..\\lib\\DevExpress\\DevExpress.Data.Desktop.v25.1.dll</HintPath>
+			<Private>true</Private>
+		</Reference>
+		<Reference Include="DevExpress.XtraEditors.v25.1">
+			<HintPath>..\\..\\lib\\DevExpress\\DevExpress.XtraEditors.v25.1.dll</HintPath>
+			<Private>true</Private>
+		</Reference>
+	</ItemGroup>
+
+</Project>

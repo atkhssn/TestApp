@@ -1,0 +1,26 @@
+# Build outputs
+bin/
+obj/
+dist/
+
+# VS / Rider
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Rider
+.idea/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Local publish artifacts (if you want them NOT in git, uncomment)
+# src/WindowsFormsApp1/bin/Release/
+# dist/
+
+# NOTE: If you choose to include DevExpress DLLs in repo (lib/), DO NOT ignore lib/
+# If you decide NOT to include them, add:
+# lib/
