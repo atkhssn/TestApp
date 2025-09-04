@@ -103,7 +103,7 @@ jobs:
           $tag = '${{ github.ref_name }}'
           $repo = '${{ github.repository }}'
           $installerName = "${{ env.APP_NAME }}-Setup-$version.exe"
-          $url = "https://github.com/$repo/releases/download/$tag/$installerName"
+          $url = "https://$repo_owner.github.io/$repo_name/$installerName"
           $changelog = "https://github.com/$repo/releases/tag/$tag"
           $folder = 'update'
           if (-not (Test-Path $folder)) { New-Item -ItemType Directory -Path $folder | Out-Null }
@@ -138,3 +138,21 @@ jobs:
           add: 'update/updates.xml'
           message: "Update metadata for ${{ needs.build.outputs.version }}"
           push: true
+      
+      - name: Copy installer to update folder
+        shell: pwsh
+        run: |
+          $version = '${{ needs.build.outputs.version }}'
+          $exe = Get-ChildItem -Path "artifacts" -Recurse -Filter "*.exe" | Select-Object -First 1
+          if ($exe) {
+            Copy-Item $exe.FullName -Destination "update/TestApp-Setup-$version.exe" -Force
+          } else {
+            Write-Error "No installer exe found in artifacts"
+          }
+
+      - name: Publish updates.xml + installer to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./update
+          destination_dir: .

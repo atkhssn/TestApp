@@ -4,13 +4,10 @@ namespace TestApp
 {
     internal static class Program
     {
-        /// <summary>
-        ///  The main entry point for the application.
-        /// </summary>
         [STAThread]
         static void Main()
         {
-            AutoUpdater.Start("https://raw.githubusercontent.com/atkhssn/TestApp/main/updates.xml");
+            AutoUpdater.Start("https://atkhssn.github.io/TestApp/updates.xml");
             ApplicationConfiguration.Initialize();
             Application.Run(new Form1());
         }
