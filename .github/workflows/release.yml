@@ -1,83 +1,53 @@
-name: Build & Package (.NET 9 + Inno Setup)
+name: Build & Release
 
 on:
   push:
-    branches: [ "main" ]
-    tags: [ "v*" ]
-
-permissions:
-  contents: write
+    tags:
+      - "v*.*.*"
 
 jobs:
   build:
     runs-on: windows-latest
     outputs:
       version: ${{ steps.getver.outputs.version }}
-    env:
-      APP_NAME: TestApp
-      PROJECT_PATH: src\TestApp\TestApp.csproj
-      PUBLISH_REL_PATH: src\TestApp\bin\Release\net9.0-windows\win-x64\publish
 
     steps:
-      - name: Checkout
+      - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Setup .NET SDK
+      - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x'
+          dotnet-version: "9.0.x"
 
-      - name: Compute version
+      - name: Get version from tag
         id: getver
-        shell: pwsh
-        run: |
-          $ref = "${{ github.ref_name }}"
-          if ($ref -match '^v\d+\.\d+\.\d+$') {
-            Write-Output "version=$($ref.TrimStart('v'))" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-          } else {
-            $short = "${{ github.sha }}".Substring(0,7)
-            Write-Output "version=0.0.0-$short" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-          }
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $env:GITHUB_OUTPUT
 
-      - name: Restore + Publish
-        shell: pwsh
-        run: |
-          dotnet restore $env:PROJECT_PATH -r win-x64
-          dotnet publish $env:PROJECT_PATH `
-            -c Release `
-            -r win-x64 `
-            --self-contained true `
-            /p:PublishSingleFile=true `
-            /p:PublishTrimmed=false
+      - name: Restore dependencies
+        run: dotnet restore
 
-      - name: Install Inno Setup
-        run: choco install innosetup --yes --no-progress
+      - name: Publish app
+        run: dotnet publish src/TestApp/TestApp.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeAllContentForSelfExtract=true -p:Version=${{ steps.getver.outputs.version }} -o publish
 
-      - name: Build installer (Inno Setup)
-        shell: pwsh
-        run: |
-          $publish = Join-Path $PWD "${{ env.PUBLISH_REL_PATH }}"
-          if (-not (Test-Path $publish)) {
-            Write-Error "Publish folder not found: $publish"
-            exit 1
-          }
-          & iscc.exe "installer\Setup.iss" /DMyAppVersion="${{ steps.getver.outputs.version }}" /DSourceDir="$publish"
-
-      - name: Upload artifacts (installer + publish)
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.APP_NAME }}-${{ steps.getver.outputs.version }}
-          path: |
-            dist\*.exe
-            ${{ env.PUBLISH_REL_PATH }}\**
+          name: TestApp
+          path: publish/**/*
 
   release:
     needs: build
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: windows-latest
     steps:
-      - name: Checkout repo
+      - name: Checkout repo (force main branch)
         uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
@@ -92,15 +62,17 @@ jobs:
 
       - name: Generate update metadata
         run: |
-          echo "<?xml version='1.0' encoding='UTF-8'?>" > updates.xml
-          echo "<item>" >> updates.xml
-          echo "  <version>${{ needs.build.outputs.version }}</version>" >> updates.xml
-          echo "  <url>https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/TestApp-Setup-${{ needs.build.outputs.version }}.exe</url>" >> updates.xml
-          echo "  <changelog>https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}</changelog>" >> updates.xml
-          echo "</item>" >> updates.xml
+          mkdir update
+          echo "<?xml version='1.0' encoding='UTF-8'?>" > update/updates.xml
+          echo "<item>" >> update/updates.xml
+          echo "  <version>${{ needs.build.outputs.version }}</version>" >> update/updates.xml
+          echo "  <url>https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/TestApp-Setup-${{ needs.build.outputs.version }}.exe</url>" >> update/updates.xml
+          echo "  <changelog>https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}</changelog>" >> update/updates.xml
+          echo "</item>" >> update/updates.xml
 
-      - name: Upload updates.xml to repo
+      - name: Commit and push updates.xml
         uses: EndBug/add-and-commit@v9
         with:
-          add: 'updates.xml'
+          add: 'update/updates.xml'
           message: "Update metadata for ${{ needs.build.outputs.version }}"
+          push: true
