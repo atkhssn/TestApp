@@ -31,7 +31,7 @@ Compression=lzma
 SolidCompression=yes
 OutputDir=dist
 OutputBaseFilename={#MyAppName}-Setup-{#MyAppVersion}
-SetupIconFile=installer\app.ico
+;SetupIconFile=installer\app.ico
 PrivilegesRequired=lowest
 
 [Languages]
