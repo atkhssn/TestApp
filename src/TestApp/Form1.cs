@@ -5,7 +5,7 @@ namespace TestApp
         public Form1()
         {
             InitializeComponent();
-            inputText.Text = "Hello, Atik";
+            inputText.Text = "Test App";
         }
     }
 }
