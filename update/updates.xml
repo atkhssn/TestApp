@@ -1,6 +1,11 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <updates>
   <item>
+    <version>1.0.12</version>
+    <url>https://.github.io//TestApp-Setup-1.0.12.exe</url>
+    <changelog>https://github.com/atkhssn/TestApp/releases/tag/v1.0.12</changelog>
+  </item>
+  <item>
     <version>1.0.11</version>
     <url>https://.github.io//TestApp-Setup-1.0.11.exe</url>
     <changelog>https://github.com/atkhssn/TestApp/releases/tag/v1.0.11</changelog>
