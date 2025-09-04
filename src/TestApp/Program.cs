@@ -7,7 +7,7 @@ namespace TestApp
         [STAThread]
         static void Main()
         {
-            AutoUpdater.Start("https://raw.githubusercontent.com/atkhssn/TestApp/main/update/updates.xml");
+            AutoUpdater.Start("https://atkhssn.github.io/TestApp/updates.xml");
             ApplicationConfiguration.Initialize();
             Application.Run(new Form1());
         }

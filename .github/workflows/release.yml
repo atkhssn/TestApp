@@ -1,4 +1,4 @@
-name: Build, Package & Release
+name: Build, Package, Release & Publish
 
 on:
   push:
@@ -42,7 +42,7 @@ jobs:
             Write-Output "version=0.0.0-$short" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           }
 
-      - name: Restore + Publish (self-contained single file)
+      - name: Restore + Publish (self-contained single file with version)
         shell: pwsh
         run: |
           dotnet restore $env:PROJECT_PATH -r win-x64
@@ -51,7 +51,8 @@ jobs:
             -r win-x64 `
             --self-contained true `
             /p:PublishSingleFile=true `
-            /p:PublishTrimmed=false
+            /p:PublishTrimmed=false `
+            /p:Version=${{ steps.getver.outputs.version }}
 
       - name: Install Inno Setup
         run: choco install innosetup --yes --no-progress
@@ -102,8 +103,10 @@ jobs:
           $version = '${{ needs.build.outputs.version }}'
           $tag = '${{ github.ref_name }}'
           $repo = '${{ github.repository }}'
+          $repoOwner = $repo.Split('/')[0]
+          $repoName = $repo.Split('/')[1]
           $installerName = "${{ env.APP_NAME }}-Setup-$version.exe"
-          $url = "https://$repo_owner.github.io/$repo_name/$installerName"
+          $url = "https://$repoOwner.github.io/$repoName/$installerName"
           $changelog = "https://github.com/$repo/releases/tag/$tag"
           $folder = 'update'
           if (-not (Test-Path $folder)) { New-Item -ItemType Directory -Path $folder | Out-Null }
