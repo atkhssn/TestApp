@@ -9,7 +9,7 @@ jobs:
   build:
     runs-on: windows-latest
     env:
-      APP_NAME: Test App
+      APP_NAME: TestApp
       PROJECT_PATH: src\TestApp\TestApp.csproj
       PUBLISH_REL_PATH: src\TestApp\bin\Release\net9.0-windows\win-x64\publish
 
@@ -25,8 +25,8 @@ jobs:
       - name: Setup MSBuild (Visual Studio Build Tools)
         uses: microsoft/setup-msbuild@v2
 
-      - name: Restore (if using NuGet / package references)
-        run: dotnet restore ${{ env.PROJECT_PATH }}
+      - name: Restore (with RuntimeIdentifier)
+        run: dotnet restore ${{ env.PROJECT_PATH }} /p:RuntimeIdentifier=win-x64
 
       - name: Compute version
         id: getver
@@ -40,11 +40,17 @@ jobs:
             Write-Output "version=0.0.0-$short" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           }
 
-      - name: Build & Publish with MSBuild (avoids GenerateResource x86 host issue)
+      - name: Build & Publish with MSBuild
         shell: pwsh
         run: |
-          # Publish via msbuild Publish target to create the single self-contained file
-          msbuild $env:PROJECT_PATH /t:Publish /p:Configuration=Release /p:Platform="Any CPU" /p:RuntimeIdentifier=win-x64 /p:PublishSingleFile=true /p:SelfContained=true /p:PublishTrimmed=false
+          msbuild $env:PROJECT_PATH `
+            /t:Publish `
+            /p:Configuration=Release `
+            /p:Platform="Any CPU" `
+            /p:RuntimeIdentifier=win-x64 `
+            /p:PublishSingleFile=true `
+            /p:SelfContained=true `
+            /p:PublishTrimmed=false
 
       - name: Install Inno Setup
         run: choco install innosetup --yes --no-progress
