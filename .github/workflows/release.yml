@@ -106,24 +106,21 @@ jobs:
           $repoOwner = $repo.Split('/')[0]
           $repoName = $repo.Split('/')[1]
 
-          # Force version into 4-part format
           if ($version.Split('.').Count -lt 4) { $version = "$version.0" }
 
           $installerName = "${{ env.APP_NAME }}-Setup-$version.exe"
           $url = "https://$repoOwner.github.io/$repoName/$installerName"
           $changelog = "https://github.com/$repo/releases/tag/$tag"
 
-          New-Item -ItemType Directory -Force -Path update | Out-Null
-          $file = "update/updates.xml"
+          $updateFolder = "update"
+          New-Item -ItemType Directory -Force -Path $updateFolder | Out-Null
+          $file = "$updateFolder/updates.xml"
 
           # --- Load existing XML or create new
           if (Test-Path $file) {
               [xml]$doc = Get-Content $file
-              $root = $doc.DocumentElement
-              if (-not $root) {
-                  $root = $doc.CreateElement("updates")
-                  $doc.AppendChild($root) | Out-Null
-              }
+              $root = $doc.SelectSingleNode('/updates')
+              if (-not $root) { $root = $doc.DocumentElement }
           } else {
               $doc = New-Object System.Xml.XmlDocument
               $xmlDecl = $doc.CreateXmlDeclaration("1.0","UTF-8",$null)
@@ -139,16 +136,15 @@ jobs:
           $chg = $doc.CreateElement("changelog"); $chg.InnerText = $changelog; $item.AppendChild($chg) | Out-Null
           $mand = $doc.CreateElement("mandatory"); $mand.InnerText = "true"; $item.AppendChild($mand) | Out-Null
 
-          # --- Insert new item at top
-          if ($root.HasChildNodes) { $root.InsertBefore($item, $root.FirstChild) | Out-Null }
-          else { $root.AppendChild($item) | Out-Null }
+          # --- Append new item at the end of XML
+          $root.AppendChild($item) | Out-Null
 
           $doc.Save($file)
           Write-Host "Update metadata written to $file"
 
-          # --- Copy installer
+          # --- Copy installer to update folder
           $exe = Get-ChildItem -Path "artifacts" -Recurse -Filter "*.exe" | Select-Object -First 1
-          if ($exe) { Copy-Item $exe.FullName -Destination "update/$installerName" -Force }
+          if ($exe) { Copy-Item $exe.FullName -Destination "$updateFolder/$installerName" -Force }
           else { Write-Error "No installer exe found"; exit 1 }
 
           # --- Write index.html
@@ -198,10 +194,15 @@ jobs:
               document.addEventListener("DOMContentLoaded", () => {
                 async function loadUpdates() {
                   try {
-                    const response = await fetch("updates.xml");
-                    const xml = new DOMParser().parseFromString(await response.text(), "application/xml");
-                    const items = xml.querySelectorAll("updates > item");
+                    const response = await fetch("./updates.xml"); // <- add "./"
+                    const xmlText = await response.text();
+                    const parser = new DOMParser();
+                    const xml = parser.parseFromString(xmlText, "application/xml");
+                    const items = Array.from(xml.querySelectorAll("updates > item"));
                     if (!items.length) return;
+
+                    items.reverse(); // latest first
+
                     let rows = "";
                     items.forEach((item, i) => {
                       const version = item.querySelector("version")?.textContent ?? "";
@@ -214,15 +215,16 @@ jobs:
                       rows += `<tr><td>v${version}</td><td><a href="${url}">Download</a></td><td><a href="${changelog}">View</a></td></tr>`;
                     });
                     document.getElementById("release-list").innerHTML = rows;
-                  } catch (e) { console.error(e); }
+                  } catch (e) {
+                    console.error("Failed to load updates.xml:", e);
+                  }
                 }
                 loadUpdates();
               });
             </script>
           </body>
           </html>
-          '@ | Out-File -FilePath update/index.html -Encoding utf8
-          Write-Host "index.html created"
+          '@ | Out-File -FilePath "$updateFolder/index.html" -Encoding utf8
 
       - name: Commit & push update folder to main
         uses: EndBug/add-and-commit@v9
