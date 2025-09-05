@@ -112,7 +112,7 @@ jobs:
           }
 
           $installerName = "${{ env.APP_NAME }}-Setup-$version.exe"
-          $url = "https://$repoOwner.github.io/$repoName/$installerName"
+          $url = "https://github.com/$repo/releases/download/$tag/$installerName"
           $changelog = "https://github.com/$repo/releases/tag/$tag"
 
           $folder = 'update'
