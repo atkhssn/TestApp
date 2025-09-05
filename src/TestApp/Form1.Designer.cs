@@ -31,6 +31,8 @@
             inputText = new TextBox();
             greetings = new Label();
             okBtn = new Button();
+            textBox1 = new TextBox();
+            label1 = new Label();
             SuspendLayout();
             // 
             // inputText
@@ -51,18 +53,36 @@
             // 
             // okBtn
             // 
-            okBtn.Location = new Point(635, 169);
+            okBtn.Location = new Point(635, 208);
             okBtn.Name = "okBtn";
             okBtn.Size = new Size(94, 29);
             okBtn.TabIndex = 2;
             okBtn.Text = "button1";
             okBtn.UseVisualStyleBackColor = true;
             // 
+            // textBox1
+            // 
+            textBox1.Location = new Point(521, 175);
+            textBox1.Name = "textBox1";
+            textBox1.Size = new Size(208, 27);
+            textBox1.TabIndex = 3;
+            // 
+            // label1
+            // 
+            label1.AutoSize = true;
+            label1.Location = new Point(521, 152);
+            label1.Name = "label1";
+            label1.Size = new Size(50, 20);
+            label1.TabIndex = 4;
+            label1.Text = "label1";
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
+            Controls.Add(label1);
+            Controls.Add(textBox1);
             Controls.Add(okBtn);
             Controls.Add(greetings);
             Controls.Add(inputText);
@@ -77,5 +97,7 @@
         private TextBox inputText;
         private Label greetings;
         private Button okBtn;
+        private TextBox textBox1;
+        private Label label1;
     }
 }
