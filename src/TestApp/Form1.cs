@@ -7,6 +7,7 @@ namespace TestApp
             InitializeComponent();
             greetings.Text = "Greetings";
             inputText.Text = "Hello from Form-1";
+            okBtn.Text = "OK";
         }
     }
 }

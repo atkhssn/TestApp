@@ -30,6 +30,7 @@
         {
             inputText = new TextBox();
             greetings = new Label();
+            okBtn = new Button();
             SuspendLayout();
             // 
             // inputText
@@ -48,11 +49,21 @@
             greetings.TabIndex = 1;
             greetings.Text = "label1";
             // 
+            // okBtn
+            // 
+            okBtn.Location = new Point(635, 169);
+            okBtn.Name = "okBtn";
+            okBtn.Size = new Size(94, 29);
+            okBtn.TabIndex = 2;
+            okBtn.Text = "button1";
+            okBtn.UseVisualStyleBackColor = true;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
+            Controls.Add(okBtn);
             Controls.Add(greetings);
             Controls.Add(inputText);
             Name = "Form1";
@@ -65,5 +76,6 @@
 
         private TextBox inputText;
         private Label greetings;
+        private Button okBtn;
     }
 }
