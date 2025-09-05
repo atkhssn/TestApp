@@ -1,6 +1,12 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <updates>
   <item>
+    <version>1.0.21.0</version>
+    <url>https://atkhssn.github.io/TestApp/TestApp-1.0.21.0.zip</url>
+    <changelog>https://atkhssn.github.io/TestApp/changelog.html</changelog>
+    <mandatory>true</mandatory>
+  </item>
+  <item>
     <version>1.0.20.0</version>
     <url>https://atkhssn.github.io/TestApp/TestApp-1.0.20.0.zip</url>
     <changelog>https://atkhssn.github.io/TestApp/changelog.html</changelog>
