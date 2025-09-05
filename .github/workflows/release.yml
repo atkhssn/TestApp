@@ -134,7 +134,7 @@ jobs:
           $ver = $doc.CreateElement('version'); $ver.InnerText = $version; $item.AppendChild($ver) | Out-Null
           $urln = $doc.CreateElement('url'); $urln.InnerText = $url; $item.AppendChild($urln) | Out-Null
           $chg = $doc.CreateElement('changelog'); $chg.InnerText = $changelog; $item.AppendChild($chg) | Out-Null
-          $mand = $doc.CreateElement('mandatory'); $mand.InnerText = "false"; $item.AppendChild($mand) | Out-Null
+          $mand = $doc.CreateElement('mandatory'); $mand.InnerText = "true"; $item.AppendChild($mand) | Out-Null
 
           if ($root.HasChildNodes) {
             $root.InsertBefore($item, $root.FirstChild) | Out-Null
