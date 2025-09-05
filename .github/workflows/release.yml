@@ -105,12 +105,20 @@ jobs:
           $repo = '${{ github.repository }}'
           $repoOwner = $repo.Split('/')[0]
           $repoName = $repo.Split('/')[1]
-          $installerName = "${{ env.APP_NAME }}-Setup-$version.exe"
+
+          # Force version into 4-part format (1.0.2 → 1.0.2.0)
+          if ($version.Split('.').Count -lt 4) {
+            $version = "$version.0"
+          }
+
+          $installerName = "${{ env.APP_NAME }}-$version.zip"
           $url = "https://$repoOwner.github.io/$repoName/$installerName"
-          $changelog = "https://github.com/$repo/releases/tag/$tag"
+          $changelog = "https://$repoOwner.github.io/$repoName/changelog.html"
+
           $folder = 'update'
           if (-not (Test-Path $folder)) { New-Item -ItemType Directory -Path $folder | Out-Null }
           $file = Join-Path $folder 'updates.xml'
+
           if (-not (Test-Path $file)) {
             # Create base XML
             "<?xml version='1.0' encoding='UTF-8'?>" | Out-File -FilePath $file -Encoding utf8
@@ -126,15 +134,17 @@ jobs:
           $ver = $doc.CreateElement('version'); $ver.InnerText = $version; $item.AppendChild($ver) | Out-Null
           $urln = $doc.CreateElement('url'); $urln.InnerText = $url; $item.AppendChild($urln) | Out-Null
           $chg = $doc.CreateElement('changelog'); $chg.InnerText = $changelog; $item.AppendChild($chg) | Out-Null
+          $mand = $doc.CreateElement('mandatory'); $mand.InnerText = "false"; $item.AppendChild($mand) | Out-Null
 
           if ($root.HasChildNodes) {
             $root.InsertBefore($item, $root.FirstChild) | Out-Null
           } else {
             $root.AppendChild($item) | Out-Null
           }
+
           $doc.Save($file)
           Write-Host "Update metadata written to $file"
-
+          
       - name: Commit & push update/updates.xml to main
         uses: EndBug/add-and-commit@v9
         with:
