@@ -43,10 +43,15 @@
     document.addEventListener("DOMContentLoaded", () => {
       async function loadUpdates() {
         try {
-          const response = await fetch("updates.xml");
-          const xml = new DOMParser().parseFromString(await response.text(), "application/xml");
-          const items = xml.querySelectorAll("updates > item");
+          const response = await fetch("./updates.xml"); // <- add "./"
+          const xmlText = await response.text();
+          const parser = new DOMParser();
+          const xml = parser.parseFromString(xmlText, "application/xml");
+          const items = Array.from(xml.querySelectorAll("updates > item"));
           if (!items.length) return;
+
+          items.reverse(); // latest first
+
           let rows = "";
           items.forEach((item, i) => {
             const version = item.querySelector("version")?.textContent ?? "";
@@ -59,7 +64,9 @@
             rows += `<tr><td>v${version}</td><td><a href="${url}">Download</a></td><td><a href="${changelog}">View</a></td></tr>`;
           });
           document.getElementById("release-list").innerHTML = rows;
-        } catch (e) { console.error(e); }
+        } catch (e) {
+          console.error("Failed to load updates.xml:", e);
+        }
       }
       loadUpdates();
     });
