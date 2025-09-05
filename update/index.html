@@ -4,153 +4,65 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TestApp Updates</title>
+  <link rel="icon" href="https://github.githubassets.com/favicons/favicon.svg">
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f9fafc;
-      color: #333;
-      margin: 0;
-      padding: 0;
-    }
-    header {
-      background: #0366d6;
-      color: white;
-      padding: 1rem;
-      text-align: center;
-    }
-    main {
-      max-width: 900px;
-      margin: 2rem auto;
-      background: white;
-      padding: 2rem;
-      border-radius: 10px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    }
-    h1, h2 {
-      margin-top: 0;
-    }
-    .download-latest {
-      display: block;
-      text-align: center;
-      margin: 2rem 0;
-    }
-    .btn {
-      display: inline-block;
-      padding: 0.8rem 1.5rem;
-      background: #28a745;
-      color: white;
-      border-radius: 5px;
-      text-decoration: none;
-      font-weight: bold;
-      font-size: 1.1rem;
-    }
-    .btn:hover {
-      background: #218838;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 2rem;
-    }
-    table th, table td {
-      padding: 0.8rem;
-      border-bottom: 1px solid #ddd;
-      text-align: left;
-    }
-    table th {
-      background: #f3f3f3;
-    }
-    a {
-      color: #0366d6;
-      text-decoration: none;
-    }
-    a:hover {
-      text-decoration: underline;
-    }
-    footer {
-      text-align: center;
-      padding: 1rem;
-      font-size: 0.9rem;
-      color: #666;
-      margin-top: 2rem;
-    }
+    body { font-family: Arial, sans-serif; background: #f9fafc; color: #333; margin:0; padding:0; }
+    header { background: #0366d6; color: white; padding: 1rem; text-align: center; }
+    main { max-width: 900px; margin: 2rem auto; background: white; padding: 2rem;
+          border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    h1, h2 { margin-top: 0; }
+    .download-latest { text-align: center; margin: 2rem 0; }
+    .btn { display: inline-block; padding: 0.8rem 1.5rem; background: #28a745; color: white;
+          border-radius: 5px; text-decoration: none; font-weight: bold; font-size: 1.1rem; }
+    .btn:hover { background: #218838; }
+    table { width: 100%; border-collapse: collapse; margin-top: 2rem; }
+    table th, table td { padding: 0.8rem; border-bottom: 1px solid #ddd; text-align: left; }
+    table th { background: #f3f3f3; }
+    a { color: #0366d6; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    footer { text-align: center; padding: 1rem; font-size: 0.9rem; color: #666; margin-top: 2rem; }
   </style>
 </head>
 <body>
   <header>
     <h1>🚀 TestApp Update Server</h1>
   </header>
-
   <main>
     <h2>Latest Version</h2>
     <div id="latest-download" class="download-latest">
       <p>Loading latest release...</p>
     </div>
-
     <h2>All Releases</h2>
     <table>
-      <thead>
-        <tr>
-          <th>Version</th>
-          <th>Download</th>
-          <th>Changelog</th>
-        </tr>
-      </thead>
-      <tbody id="release-list">
-        <tr><td colspan="3">Loading releases...</td></tr>
-      </tbody>
+      <thead><tr><th>Version</th><th>Download</th><th>Changelog</th></tr></thead>
+      <tbody id="release-list"><tr><td colspan="3">Loading...</td></tr></tbody>
     </table>
   </main>
-
-  <footer>
-    &copy; 2025 TestApp · Updates hosted with GitHub Pages
-  </footer>
-
+  <footer>&copy; 2025 TestApp · Updates hosted with GitHub Pages</footer>
   <script>
-    async function loadUpdates() {
-      try {
-        const response = await fetch("updates.xml");
-        const xmlText = await response.text();
-
-        const parser = new DOMParser();
-        const xml = parser.parseFromString(xmlText, "application/xml");
-        const items = xml.querySelectorAll("updates > item");
-
-        if (!items.length) {
-          document.getElementById("release-list").innerHTML = "<tr><td colspan='3'>No updates found</td></tr>";
-          return;
-        }
-
-        let rows = "";
-        items.forEach((item, index) => {
-          const version = item.querySelector("version")?.textContent ?? "";
-          const url = item.querySelector("url")?.textContent ?? "#";
-          const changelog = item.querySelector("changelog")?.textContent ?? "#";
-
-          if (index === 0) {
-            // Latest version button
-            document.getElementById("latest-download").innerHTML = `
-              <a class="btn" href="${url}">⬇ Download TestApp v${version}</a>
-            `;
-          }
-
-          rows += `
-            <tr>
-              <td>v${version}</td>
-              <td><a href="${url}">Download</a></td>
-              <td><a href="${changelog}">View</a></td>
-            </tr>
-          `;
-        });
-
-        document.getElementById("release-list").innerHTML = rows;
-      } catch (err) {
-        console.error("Failed to load updates.xml", err);
-        document.getElementById("release-list").innerHTML = "<tr><td colspan='3'>Error loading updates.xml</td></tr>";
+    document.addEventListener("DOMContentLoaded", () => {
+      async function loadUpdates() {
+        try {
+          const response = await fetch("updates.xml");
+          const xml = new DOMParser().parseFromString(await response.text(), "application/xml");
+          const items = xml.querySelectorAll("updates > item");
+          if (!items.length) return;
+          let rows = "";
+          items.forEach((item, i) => {
+            const version = item.querySelector("version")?.textContent ?? "";
+            const url = item.querySelector("url")?.textContent ?? "#";
+            const changelog = item.querySelector("changelog")?.textContent ?? "#";
+            if (i === 0) {
+              document.getElementById("latest-download").innerHTML =
+                `<a class="btn" href="${url}">⬇ Download TestApp v${version}</a>`;
+            }
+            rows += `<tr><td>v${version}</td><td><a href="${url}">Download</a></td><td><a href="${changelog}">View</a></td></tr>`;
+          });
+          document.getElementById("release-list").innerHTML = rows;
+        } catch (e) { console.error(e); }
       }
-    }
-
-    loadUpdates();
+      loadUpdates();
+    });
   </script>
 </body>
 </html>
