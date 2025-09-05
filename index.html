@@ -40,29 +40,29 @@
   </main>
   <footer>&copy; 2025 TestApp · Updates hosted with GitHub Pages</footer>
   <script>
-    async function loadUpdates() {
-      try {
-        const response = await fetch("updates.xml");
-        const xml = new DOMParser().parseFromString(await response.text(), "application/xml");
-        const items = xml.querySelectorAll("updates > item");
-        if (!items.length) return;
-        let rows = "";
-        items.forEach((item, i) => {
-          const version = item.querySelector("version")?.textContent ?? "";
-          const url = item.querySelector("url")?.textContent ?? "#";
-          const changelog = item.querySelector("changelog")?.textContent ?? "#";
-          if (i === 0) {
-            document.getElementById("latest-download").innerHTML =
-              `<a class="btn" href="${url}">⬇ Download TestApp v${version}</a>`;
-          }
-          rows += `<tr><td>v${version}</td><td><a href="${url}">Download</a></td><td><a href="${changelog}">View</a></td></tr>`;
-        });
-        document.getElementById("release-list").innerHTML = rows;
-      } catch (e) {
-        console.error(e);
+    document.addEventListener("DOMContentLoaded", () => {
+      async function loadUpdates() {
+        try {
+          const response = await fetch("updates.xml");
+          const xml = new DOMParser().parseFromString(await response.text(), "application/xml");
+          const items = xml.querySelectorAll("updates > item");
+          if (!items.length) return;
+          let rows = "";
+          items.forEach((item, i) => {
+            const version = item.querySelector("version")?.textContent ?? "";
+            const url = item.querySelector("url")?.textContent ?? "#";
+            const changelog = item.querySelector("changelog")?.textContent ?? "#";
+            if (i === 0) {
+              document.getElementById("latest-download").innerHTML =
+                `<a class="btn" href="${url}">⬇ Download TestApp v${version}</a>`;
+            }
+            rows += `<tr><td>v${version}</td><td><a href="${url}">Download</a></td><td><a href="${changelog}">View</a></td></tr>`;
+          });
+          document.getElementById("release-list").innerHTML = rows;
+        } catch (e) { console.error(e); }
       }
-    }
-    loadUpdates();
+      loadUpdates();
+    });
   </script>
 </body>
 </html>
