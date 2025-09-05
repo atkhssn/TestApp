@@ -119,7 +119,7 @@ jobs:
           # --- Load existing XML or create new
           if (Test-Path $file) {
               [xml]$doc = Get-Content $file
-              $root = $doc.SelectSingleNode('/updates')
+              $root = $doc.DocumentElement
               if (-not $root) {
                   $root = $doc.CreateElement("updates")
                   $doc.AppendChild($root) | Out-Null
