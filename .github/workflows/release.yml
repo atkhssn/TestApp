@@ -97,7 +97,7 @@ jobs:
           files: artifacts/**/*.exe
           generate_release_notes: true
 
-      - name: Generate update metadata (update/updates.xml)
+      - name: Prepare update folder (xml + html + exe)
         shell: pwsh
         run: |
           $version = '${{ needs.build.outputs.version }}'
@@ -106,7 +106,7 @@ jobs:
           $repoOwner = $repo.Split('/')[0]
           $repoName = $repo.Split('/')[1]
 
-          # Force version into 4-part format (1.0.2 → 1.0.2.0)
+          # Force version into 4-part format
           if ($version.Split('.').Count -lt 4) {
             $version = "$version.0"
           }
@@ -115,53 +115,108 @@ jobs:
           $url = "https://$repoOwner.github.io/$repoName/$installerName"
           $changelog = "https://github.com/$repo/releases/tag/$tag"
 
-          $folder = 'update'
-          if (-not (Test-Path $folder)) { New-Item -ItemType Directory -Path $folder | Out-Null }
-          $file = Join-Path $folder 'updates.xml'
+          New-Item -ItemType Directory -Force -Path update | Out-Null
 
-          # Always overwrite with single <item> (AutoUpdater.NET requirement)
-          "<?xml version='1.0' encoding='UTF-8'?>" | Out-File -FilePath $file -Encoding utf8
-          "<item>" | Add-Content -Path $file -Encoding utf8
-          "  <version>$version</version>" | Add-Content -Path $file -Encoding utf8
-          "  <url>$url</url>" | Add-Content -Path $file -Encoding utf8
-          "  <changelog>$changelog</changelog>" | Add-Content -Path $file -Encoding utf8
-          "  <mandatory>true</mandatory>" | Add-Content -Path $file -Encoding utf8
-          "</item>" | Add-Content -Path $file -Encoding utf8
+          # --- Generate updates.xml (append items inside <updates>)
+          $file = "update/updates.xml"
+          if (-not (Test-Path $file)) {
+            "<?xml version='1.0' encoding='UTF-8'?>" | Out-File $file -Encoding utf8
+            "<updates>" | Add-Content $file -Encoding utf8
+          }
+          "<item>" | Add-Content $file -Encoding utf8
+          "  <version>$version</version>" | Add-Content $file -Encoding utf8
+          "  <url>$url</url>" | Add-Content $file -Encoding utf8
+          "  <changelog>$changelog</changelog>" | Add-Content $file -Encoding utf8
+          "  <mandatory>true</mandatory>" | Add-Content $file -Encoding utf8
+          "</item>" | Add-Content $file -Encoding utf8
 
-          Write-Host "Update metadata written to $file"
+          # Ensure closing tag
+          (Get-Content $file) -replace '</updates>', '' | Set-Content $file -Encoding utf8
+          Add-Content $file "</updates>"
 
-      - name: Copy installer to update folder
-        shell: pwsh
-        run: |
-          $version = '${{ needs.build.outputs.version }}'
+          # --- Copy installer into update folder
           $exe = Get-ChildItem -Path "artifacts" -Recurse -Filter "*.exe" | Select-Object -First 1
           if ($exe) {
-            New-Item -ItemType Directory -Force -Path "update" | Out-Null
-            Copy-Item $exe.FullName -Destination "update/TestApp-Setup-$version.exe" -Force
-            Write-Host "Copied installer to update/TestApp-Setup-$version.exe"
+            Copy-Item $exe.FullName -Destination "update/$installerName" -Force
           } else {
-            Write-Error "No installer exe found in artifacts"
+            Write-Error "No installer exe found"
+            exit 1
           }
-          
-      - name: Commit & push update/updates.xml to main
-        uses: EndBug/add-and-commit@v9
-        with:
-          add: 'update/updates.xml'
-          message: "Update metadata for ${{ needs.build.outputs.version }}"
-          push: true
+
+          # --- Write index.html
+          @'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>TestApp Updates</title>
+            <link rel="icon" href="https://github.githubassets.com/favicons/favicon.svg">
+            <style>
+              body { font-family: Arial, sans-serif; background: #f9fafc; color: #333; margin:0; padding:0; }
+              header { background: #0366d6; color: white; padding: 1rem; text-align: center; }
+              main { max-width: 900px; margin: 2rem auto; background: white; padding: 2rem;
+                    border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+              h1, h2 { margin-top: 0; }
+              .download-latest { text-align: center; margin: 2rem 0; }
+              .btn { display: inline-block; padding: 0.8rem 1.5rem; background: #28a745; color: white;
+                    border-radius: 5px; text-decoration: none; font-weight: bold; font-size: 1.1rem; }
+              .btn:hover { background: #218838; }
+              table { width: 100%; border-collapse: collapse; margin-top: 2rem; }
+              table th, table td { padding: 0.8rem; border-bottom: 1px solid #ddd; text-align: left; }
+              table th { background: #f3f3f3; }
+              a { color: #0366d6; text-decoration: none; }
+              a:hover { text-decoration: underline; }
+              footer { text-align: center; padding: 1rem; font-size: 0.9rem; color: #666; margin-top: 2rem; }
+            </style>
+          </head>
+          <body>
+            <header>
+              <h1>🚀 TestApp Update Server</h1>
+            </header>
+            <main>
+              <h2>Latest Version</h2>
+              <div id="latest-download" class="download-latest">
+                <p>Loading latest release...</p>
+              </div>
+              <h2>All Releases</h2>
+              <table>
+                <thead><tr><th>Version</th><th>Download</th><th>Changelog</th></tr></thead>
+                <tbody id="release-list"><tr><td colspan="3">Loading...</td></tr></tbody>
+              </table>
+            </main>
+            <footer>&copy; 2025 TestApp · Updates hosted with GitHub Pages</footer>
+            <script>
+              async function loadUpdates() {
+                try {
+                  const response = await fetch("updates.xml");
+                  const xml = new DOMParser().parseFromString(await response.text(), "application/xml");
+                  const items = xml.querySelectorAll("updates > item");
+                  if (!items.length) return;
+                  let rows = "";
+                  items.forEach((item, i) => {
+                    const version = item.querySelector("version")?.textContent ?? "";
+                    const url = item.querySelector("url")?.textContent ?? "#";
+                    const changelog = item.querySelector("changelog")?.textContent ?? "#";
+                    if (i === 0) {
+                      document.getElementById("latest-download").innerHTML =
+                        `<a class="btn" href="${url}">⬇ Download TestApp v${version}</a>`;
+                    }
+                    rows += `<tr><td>v${version}</td><td><a href="${url}">Download</a></td><td><a href="${changelog}">View</a></td></tr>`;
+                  });
+                  document.getElementById("release-list").innerHTML = rows;
+                } catch (e) {
+                  console.error(e);
+                }
+              }
+              loadUpdates();
+            </script>
+          </body>
+          </html>
+          '@ | Out-File -FilePath update/index.html -Encoding utf8
+          Write-Host "index.html created"
       
-      - name: Copy installer to update folder
-        shell: pwsh
-        run: |
-          $version = '${{ needs.build.outputs.version }}'
-          $exe = Get-ChildItem -Path "artifacts" -Recurse -Filter "*.exe" | Select-Object -First 1
-          if ($exe) {
-            Copy-Item $exe.FullName -Destination "update/TestApp-Setup-$version.exe" -Force
-          } else {
-            Write-Error "No installer exe found in artifacts"
-          }
-
-      - name: Publish updates.xml + installer to GitHub Pages
+      - name: Publish updates.xml + installer + index.html to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
