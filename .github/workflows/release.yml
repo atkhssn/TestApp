@@ -111,9 +111,9 @@ jobs:
             $version = "$version.0"
           }
 
-          $installerName = "${{ env.APP_NAME }}-$version.zip"
+          $installerName = "${{ env.APP_NAME }}-Setup-$version.exe"
           $url = "https://$repoOwner.github.io/$repoName/$installerName"
-          $changelog = "https://$repoOwner.github.io/$repoName/changelog.html"
+          $changelog = "https://github.com/$repo/releases/tag/$tag"
 
           $folder = 'update'
           if (-not (Test-Path $folder)) { New-Item -ItemType Directory -Path $folder | Out-Null }
