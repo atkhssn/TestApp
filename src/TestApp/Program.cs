@@ -9,7 +9,7 @@ namespace TestApp
         {
             AutoUpdater.Start("https://atkhssn.github.io/TestApp/updates.xml");
             ApplicationConfiguration.Initialize();
-            Application.Run(new Form1());
+            Application.Run(new Login());
         }
     }
 }
